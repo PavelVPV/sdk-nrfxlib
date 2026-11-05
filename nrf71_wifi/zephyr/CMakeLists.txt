@@ -26,7 +26,9 @@ set(zephyr_dir ${APPLICATION_BINARY_DIR}/zephyr)
 dt_chosen(code_partition PROPERTY "zephyr,code-partition")
 dt_reg_addr(patch_region_start PATH ${code_partition})
 dt_reg_size(patch_region_size PATH ${code_partition})
-math(EXPR patch_region_end "${patch_region_start} + ${patch_region_size}")
+math(EXPR patch_region_end
+  "${patch_region_start} + ${patch_region_size} - ${CONFIG_ROM_END_OFFSET}"
+)
 
 # WICR node
 dt_nodelabel(wicr_node NODELABEL wicr REQUIRED)
@@ -115,9 +117,11 @@ foreach(idx RANGE ${last_idx})
   set(${name}_size ${size})
 
   if(addr LESS patch_region_start OR end GREATER patch_region_end)
+    math(EXPR end_hex "${end}" OUTPUT_FORMAT HEXADECIMAL)
+    math(EXPR region_end_hex "${patch_region_end}" OUTPUT_FORMAT HEXADECIMAL)
     message(WARNING
-      "${name} patch [${origin}, ${end}) is outside code partition "
-      "[${patch_region_start}, ${patch_region_end})"
+      "${name} patch [${origin}, ${end_hex}) is outside code partition "
+      "[${patch_region_start}, ${region_end_hex}) minus ROM end offset"
     )
     return()
   endif()
